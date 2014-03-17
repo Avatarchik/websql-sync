@@ -3,7 +3,7 @@ websql-sync
 
 sync local websql with remote endpoint
  - minimal
- - handles deletes
+ - handles deletes (you must track them on server)
 
 
 When you do any action on your table, websql-sync (wss) stores event about this, then after calling sync, this events are send to server, where they are replayed on DB, then server returns all rows which were updated since last sync.
