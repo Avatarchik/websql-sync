@@ -1,4 +1,4 @@
-(function(){
+;(function(){
 
   function postJSON(uri, data, callback) {
     var xmlHttp = new XMLHttpRequest();
@@ -270,7 +270,7 @@
         return i.id;
       });
 
-      postJSON(self.url, payload, function(err, serverResponse){
+      window.websqlSync.postJSON(self.url, payload, function(err, serverResponse){
         if(err) return cb(err, null, tx);
 
         // we need new transaction, because this one wouldn't last through xhr
@@ -296,6 +296,7 @@
     });
   };
 
+  window.websqlSync.postJSON = postJSON;
   window.websqlSync.orm = Syncer.orm;
   window.websqlSync.db = Syncer.db;
 })();
