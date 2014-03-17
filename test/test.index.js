@@ -158,18 +158,18 @@ describe('websqlSync', function(){
         // we assume 1,2,3 are synced so we delete this events
         websqlSync.orm.del('_events', 'id IN (1, 2, 3)', tx, function(err, res, tx){
           websqlSync.orm.query('UPDATE todos SET value="bla" WHERE id=1', tx, function(err, res, tx){
-            console.log(err, res, tx)
+//            console.log(err, res, tx)
             websqlSync.orm.del('todos', 'id=2', tx, function(err, res, tx){
-              console.log(err, res, tx)
+//              console.log(err, res, tx)
               websqlSync.orm.select('_events', null, tx, function(err, res, tx){
-                console.log(err, res, tx)
+//                console.log(err, res, tx)
                 expect(res.rows.length).to.be(2);
                 sync.sync(function(err, res, tx){
-                  console.log(err, res, tx)
+//                  console.log(err, res, tx)
                   websqlSync.orm.select('todos', null, tx, function(err, res, tx){
-                    console.log(err, res, tx)
-                    expect(res.rows.length).to.be(3);
-                    expect(res.rows.item(2).value).to.be('beep');
+//                    console.log(err, res, tx)
+                    expect(res.rows.length).to.be(2);
+                    expect(res.rows.item(1).value).to.be('beep');
 //                    for(var i=0; i<res.rows.length; i++){
 //                      console.log(res.rows.item(i))
 //                    }

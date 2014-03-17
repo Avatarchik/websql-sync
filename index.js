@@ -264,13 +264,15 @@
         Syncer.orm.del('todos', 'id IN ("'+ids.join('","')+'")',
           null, function(err, res, tx){
             Syncer.orm.insert('todos', serverResponse.updates, tx, function(err, res, tx){
-              Syncer.orm.query('UPDATE _lastSync SET ts='
-                + serverResponse.serverTime, tx, function(err, res, tx){
+              Syncer.orm.del('todos', self.idCol+' IN ("'+serverResponse.deletes.join('","')+'")', tx, function(err, res, tx){
+                Syncer.orm.query('UPDATE _lastSync SET ts='
+                  + serverResponse.serverTime, tx, function(err, res, tx){
 
-                // @fix we shouldn't delete events added during sinc, thus we need
-                // track them by id, or timestamp
-                Syncer.orm.del('_events', '', tx, function(err, res, tx){
-                  return cb(null, res, tx);
+                  // @fix we shouldn't delete events added during sinc, thus we need
+                  // track them by id, or timestamp
+                  Syncer.orm.del('_events', '', tx, function(err, res, tx){
+                    return cb(null, res, tx);
+                  });
                 });
               });
             });

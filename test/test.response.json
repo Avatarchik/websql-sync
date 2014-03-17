@@ -3,5 +3,8 @@
     {"value": "foo", "id": 1},
     {"value": "beep", "id": 4}
   ],
+  "deletes": [
+    3
+  ],
   "serverTime": 1394892664128
 }
