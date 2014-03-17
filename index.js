@@ -223,28 +223,45 @@
     });
   };
 
+
   Syncer.prototype.makePayload = function(cb){
     var payload = {
-      updates: []
+      upserts: [],
+      deletes: []
     };
 
-    Syncer.orm.query('SELECT * FROM _events', null, function(err, res, tx){
-      if(err) return cb(err);
+    Syncer.orm.query('SELECT * FROM '+this.tableName+' WHERE id IN' +
+      ' (SELECT id FROM _events WHERE cmd LIKE "upsert")',
+      null, function(err, res, tx){
 
-      for(var i=0; i<res.rows.length; i++){
-        payload.updates.push(res.rows.item(i));
-      }
+        if(err) return cb(err, res);
 
-      Syncer.orm.query('SELECT * FROM _lastSync', tx, function(err, res, tx){
-        if(err) return cb(err, null, tx);
+        for(var i=0; i<res.rows.length; i++){
+          payload.upserts.push(res.rows.item(i));
+        }
 
-        // never synced
-        if(res.rows.length === 0) payload.since = 0;
-        else payload.since = res.rows.item(0).ts;
+        Syncer.orm.select('_events', 'cmd LIKE "delete"',tx,
+          function(err, res, tx){
 
-        cb(null, payload, tx);
+            if(err) return cb(err, res);
+
+            for(var i=0; i<res.rows.length; i++){
+              payload.deletes.push(res.rows.item(i));
+            }
+
+            Syncer.orm.query('SELECT * FROM _lastSync LIMIT 1', tx,
+              function(err, res, tx){
+
+              if(err) return cb(err, null, tx);
+
+              // never synced
+              if(res.rows.length === 0) payload.since = 0;
+              else payload.since = res.rows.item(0).ts;
+
+              cb(null, payload, tx);
+            });
+          });
       });
-    });
   };
 
   Syncer.prototype.sync = function(cb){
@@ -253,7 +270,7 @@
     self.makePayload(function(err, payload, tx){
 
       // ids of affected items since last sync
-      var ids = payload.updates.map(function(i){
+      var ids = payload.upserts.map(function(i){
         return i.id;
       });
 

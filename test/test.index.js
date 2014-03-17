@@ -145,7 +145,7 @@ describe('websqlSync', function(){
     it('should compose payload for server correctly', function(done){
       websqlSync.orm.insert('todos', todos, null, function(err, res, tx){
         sync.makePayload(function(err, pay){
-          expect(pay.updates.length).to.be(3);
+          expect(pay.upserts.length).to.be(3);
           expect(pay).to.have.property('since');
           done();
         });
