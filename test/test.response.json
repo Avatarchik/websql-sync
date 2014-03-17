@@ -1,0 +1,7 @@
+{
+  "updates": [
+    {"value": "foo", "id": 1},
+    {"value": "beep", "id": 4}
+  ],
+  "serverTime": 1394892664128
+}
