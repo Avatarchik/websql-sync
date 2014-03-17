@@ -12,12 +12,12 @@
     xmlHttp.send(data);
   };
 
-  var syncer = window.syncer = function(opts){
-    syncer.db = opts.db;
+  window.websqlSync = function(opts){
+    Syncer.db = opts.db;
     return new Syncer(opts);
   }
 
-  syncer.orm = {
+  Syncer.orm = {
 
     /**
      * insert helper
@@ -79,7 +79,7 @@
       if(transaction){
         return insert(transaction);
       } else {
-        return syncer.db.transaction(function(tx){
+        return Syncer.db.transaction(function(tx){
           return insert(tx);
         })
       }
@@ -113,7 +113,7 @@
       if(transaction){
         return del(transaction);
       } else {
-        return syncer.db.transaction(function(tx){
+        return Syncer.db.transaction(function(tx){
           return del(tx);
         })
       }
@@ -143,7 +143,7 @@
       if(transaction){
         return query(transaction);
       } else {
-        return syncer.db.transaction(function(tx){
+        return Syncer.db.transaction(function(tx){
           return query(tx);
         })
       }
@@ -176,7 +176,7 @@
       if(transaction){
         return select(transaction);
       } else {
-        return syncer.db.transaction(function(tx){
+        return Syncer.db.transaction(function(tx){
           return select(tx);
         })
       }
@@ -188,11 +188,11 @@
     this.url = opts.url || '';
     this.idCol = opts.id || 'id';
     this.tableName = this.opts.tableName;
-    if(!this.tableName) throw Error('syncer ~> missing table name in options');
+    if(!this.tableName) throw Error('Syncer ~> missing table name in options');
   }
 
   Syncer.prototype.init = function(cb){
-    syncer.db.transaction(function(tx){
+    Syncer.db.transaction(function(tx){
       // @todo add TS
       tx.executeSql('CREATE TABLE IF NOT EXISTS _events' +
           ' (id TEXT, cmd TEXT)', null);
@@ -208,7 +208,7 @@
   Syncer.prototype.initTriggers = function(cb){
     var self = this
       ;
-    syncer.db.transaction(function(tx){
+    Syncer.db.transaction(function(tx){
       tx.executeSql('CREATE TRIGGER IF NOT EXISTS update_events_for_'+self.tableName+
         ' AFTER UPDATE ON '+self.tableName+' BEGIN ' +
         ' INSERT INTO _events (id, cmd) VALUES (new.'+self.idCol+', "upsert"); END;', null);
@@ -228,14 +228,14 @@
       updates: []
     };
 
-    syncer.orm.query('SELECT * FROM _events', null, function(err, res, tx){
+    Syncer.orm.query('SELECT * FROM _events', null, function(err, res, tx){
       if(err) return cb(err);
 
       for(var i=0; i<res.rows.length; i++){
         payload.updates.push(res.rows.item(i));
       }
 
-      syncer.orm.query('SELECT * FROM _lastSync', tx, function(err, res, tx){
+      Syncer.orm.query('SELECT * FROM _lastSync', tx, function(err, res, tx){
         if(err) return cb(err, null, tx);
 
         // never synced
@@ -261,15 +261,15 @@
         if(err) return cb(err, null, tx);
 
         // we need new transaction, because this one wouldn't last through xhr
-        syncer.orm.del('todos', 'id IN ("'+ids.join('","')+'")',
+        Syncer.orm.del('todos', 'id IN ("'+ids.join('","')+'")',
           null, function(err, res, tx){
-            syncer.orm.insert('todos', serverResponse.updates, tx, function(err, res, tx){
-              syncer.orm.query('UPDATE _lastSync SET ts='
+            Syncer.orm.insert('todos', serverResponse.updates, tx, function(err, res, tx){
+              Syncer.orm.query('UPDATE _lastSync SET ts='
                 + serverResponse.serverTime, tx, function(err, res, tx){
 
                 // @fix we shouldn't delete events added during sinc, thus we need
                 // track them by id, or timestamp
-                syncer.orm.del('_events', '', tx, function(err, res, tx){
+                Syncer.orm.del('_events', '', tx, function(err, res, tx){
                   return cb(null, res, tx);
                 });
               });
@@ -278,4 +278,7 @@
       });
     });
   };
+
+  window.websqlSync.orm = Syncer.orm;
+  window.websqlSync.db = Syncer.db;
 })();

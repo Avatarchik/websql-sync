@@ -2,7 +2,7 @@
  * Created by martin on 15.03.14.
  */
 
-var sync = syncer({
+var sync = websqlSync({
   db: openDatabase('test', '0.1', 'Test DB', 5*1024*1024),
   tableName: 'todos',
   url: 'test.response.js'
@@ -15,20 +15,20 @@ var todos = [
 ];
 
 function flush(cb){
-  syncer.orm.del('todos', null, null, function(err, res, tx){
-    syncer.orm.del('_events', null, tx, function(err){
-      syncer.orm.del('_lastSync', null, tx, function(err){
+  websqlSync.orm.del('todos', null, null, function(err, res, tx){
+    websqlSync.orm.del('_events', null, tx, function(err){
+      websqlSync.orm.del('_lastSync', null, tx, function(err){
         cb();
       });
     });
   });
 }
 
-describe('syncer', function(){
+describe('websqlSync', function(){
 
   before(function(done){
     sync.init(function(){
-      syncer.orm.query('CREATE TABLE IF NOT EXISTS todos ' +
+      websqlSync.orm.query('CREATE TABLE IF NOT EXISTS todos ' +
         '(id TEXT PRIMARY KEY, value TEXT)', null, function(err, res){
         sync.initTriggers(function(){
           done();
@@ -38,9 +38,9 @@ describe('syncer', function(){
   });
 
   after(function(done){
-    syncer.orm.query('DROP TABLE _lastSync', null, function(err, res, tx){
-      syncer.orm.query('DROP TABLE _events', tx, function(err, res, tx){
-        syncer.orm.query('DROP TABLE todos', tx, function(err, res, tx){
+    websqlSync.orm.query('DROP TABLE _lastSync', null, function(err, res, tx){
+      websqlSync.orm.query('DROP TABLE _events', tx, function(err, res, tx){
+        websqlSync.orm.query('DROP TABLE todos', tx, function(err, res, tx){
           done();
         });
       });
@@ -55,15 +55,15 @@ describe('syncer', function(){
   describe('orm', function(){
 
     it('insert should insert data', function(done){
-      syncer.orm.insert('todos', {id: 'foo', value: 'bar'}, null, function(err, res){
+      websqlSync.orm.insert('todos', {id: 'foo', value: 'bar'}, null, function(err, res){
         expect(res.rowsAffected).to.be.eql(2); // insert + trigger insert
         done();
       });
     });
 
     it('query should make given sql query', function(done){
-      syncer.orm.insert('todos', {id: 'foo', value: 'baz'}, null, function(err, res, tx){
-        syncer.orm.query('SELECT * FROM todos WHERE id = "foo"', tx, function(err, res){
+      websqlSync.orm.insert('todos', {id: 'foo', value: 'baz'}, null, function(err, res, tx){
+        websqlSync.orm.query('SELECT * FROM todos WHERE id = "foo"', tx, function(err, res){
           expect(res.rows.length).to.be.eql(1);
           done();
         });
@@ -71,8 +71,8 @@ describe('syncer', function(){
     });
 
     it('select should select data', function(done){
-      syncer.orm.insert('todos', todos, null, function(err, res, tx){
-        syncer.orm.select('todos', 'id = 2', tx, function(err, res){
+      websqlSync.orm.insert('todos', todos, null, function(err, res, tx){
+        websqlSync.orm.select('todos', 'id = 2', tx, function(err, res){
           expect(res.rows.length).to.be.eql(1);
           done();
         });
@@ -80,12 +80,12 @@ describe('syncer', function(){
     });
 
     it('delete should delete data', function(done){
-      syncer.orm.insert('todos', todos, null, function(err, res, tx){
-        syncer.orm.select('todos', null, tx, function(err, res, tx){
+      websqlSync.orm.insert('todos', todos, null, function(err, res, tx){
+        websqlSync.orm.select('todos', null, tx, function(err, res, tx){
           expect(res.rows.length).to.be(3);
-          syncer.orm.del('todos', 'id = 2', tx, function(err, res, tx){
+          websqlSync.orm.del('todos', 'id = 2', tx, function(err, res, tx){
             expect(err).to.be(null);
-            syncer.orm.select('todos', null, tx, function(err, res, tx){
+            websqlSync.orm.select('todos', null, tx, function(err, res, tx){
               expect(res.rows.length).to.be(2);
               done();
             });
@@ -99,8 +99,8 @@ describe('syncer', function(){
     describe('events', function(){
 
       it('should save event to queue', function(done){
-        syncer.orm.insert('todos', todos[0], null, function(err, res, tx){
-          syncer.orm.select('_events', '',tx, function(err, res, tx){
+        websqlSync.orm.insert('todos', todos[0], null, function(err, res, tx){
+          websqlSync.orm.select('_events', '',tx, function(err, res, tx){
             expect(res.rows.length).to.be.eql(1);
             done();
           });
@@ -108,10 +108,10 @@ describe('syncer', function(){
       });
 
       it('should save multiple events after various actions', function(done){
-        syncer.orm.insert('todos', todos[0], null, function(err, res, tx){
-          syncer.orm.insert('todos', todos[1], null, function(err, res, tx){
-            syncer.orm.del('todos', 'id = 2', null, function(err, res, tx){
-              syncer.orm.select('_events', '', tx, function(err, res, tx){
+        websqlSync.orm.insert('todos', todos[0], null, function(err, res, tx){
+          websqlSync.orm.insert('todos', todos[1], null, function(err, res, tx){
+            websqlSync.orm.del('todos', 'id = 2', null, function(err, res, tx){
+              websqlSync.orm.select('_events', '', tx, function(err, res, tx){
                 expect(res.rows.length).to.be.eql(3);
                 done();
               });
@@ -125,7 +125,7 @@ describe('syncer', function(){
 
       it('should save last sync timestamp', function(done){
         var lastSync = (new Date).getTime();
-        syncer.orm.insert('_lastSync', {ts: lastSync}, null, function(err, res){
+        websqlSync.orm.insert('_lastSync', {ts: lastSync}, null, function(err, res){
           expect(err).to.be(null);
           done();
         });
@@ -133,17 +133,17 @@ describe('syncer', function(){
     });
   });
 
-  describe('syncer', function(){
+  describe('websqlSync', function(){
     sync.url = 'test.response.json';
 
     beforeEach(function(done){
-      syncer.orm.insert('_lastSync', {ts: 10}, null, function(err, res, tx){
+      websqlSync.orm.insert('_lastSync', {ts: 10}, null, function(err, res, tx){
         done();
       });
     });
 
     it('should compose payload for server correctly', function(done){
-      syncer.orm.insert('todos', todos, null, function(err, res, tx){
+      websqlSync.orm.insert('todos', todos, null, function(err, res, tx){
         sync.makePayload(function(err, pay){
           expect(pay.updates.length).to.be(3);
           expect(pay).to.have.property('since');
@@ -154,28 +154,28 @@ describe('syncer', function(){
 
     it('should synchronize', function(done){
       // inserting 1,2,3 items, thus there should be 3 _events
-      syncer.orm.insert('todos', todos, null, function(err, res, tx){
+      websqlSync.orm.insert('todos', todos, null, function(err, res, tx){
         // we assume 1,2,3 are synced so we delete this events
-        syncer.orm.del('_events', 'id IN (1, 2, 3)', tx, function(err, res, tx){
-          syncer.orm.query('UPDATE todos SET value="bla" WHERE id=1', tx, function(err, res, tx){
+        websqlSync.orm.del('_events', 'id IN (1, 2, 3)', tx, function(err, res, tx){
+          websqlSync.orm.query('UPDATE todos SET value="bla" WHERE id=1', tx, function(err, res, tx){
             console.log(err, res, tx)
-            syncer.orm.del('todos', 'id=2', tx, function(err, res, tx){
+            websqlSync.orm.del('todos', 'id=2', tx, function(err, res, tx){
               console.log(err, res, tx)
-              syncer.orm.select('_events', null, tx, function(err, res, tx){
+              websqlSync.orm.select('_events', null, tx, function(err, res, tx){
                 console.log(err, res, tx)
                 expect(res.rows.length).to.be(2);
                 sync.sync(function(err, res, tx){
                   console.log(err, res, tx)
-                  syncer.orm.select('todos', null, tx, function(err, res, tx){
+                  websqlSync.orm.select('todos', null, tx, function(err, res, tx){
                     console.log(err, res, tx)
                     expect(res.rows.length).to.be(3);
                     expect(res.rows.item(2).value).to.be('beep');
 //                    for(var i=0; i<res.rows.length; i++){
 //                      console.log(res.rows.item(i))
 //                    }
-                    syncer.orm.select('_lastSync', null, tx, function(err, res){
+                    websqlSync.orm.select('_lastSync', null, tx, function(err, res){
                       expect(res.rows.item(0).ts).to.be(1394892664128);
-                      syncer.orm.select('_events', null, tx, function(err, res){
+                      websqlSync.orm.select('_events', null, tx, function(err, res){
                         expect(res.rows.length).to.be(0);
                         done();
                       });
