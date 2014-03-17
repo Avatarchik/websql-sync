@@ -36,3 +36,13 @@ and finally sync with remote endpoint
 ```js
 sync.sync(function(err, res, tx){});
 ```
+
+example request payload
+```json
+{"upserts":[{"id":"1","value":"bla"}],"deletes":[{"id":"2"}],"since":10}
+```
+and response
+```json
+{"upserts":[{"value": "foo", "id": 3},{"value": "beep", "id": 4}],"deletes": [{"id":5}],"serverTime": 13}
+```
+
