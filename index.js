@@ -261,10 +261,10 @@
         if(err) return cb(err, null, tx);
 
         // we need new transaction, because this one wouldn't last through xhr
-        Syncer.orm.del('todos', 'id IN ("'+ids.join('","')+'")',
+        Syncer.orm.del(self.tableName, 'id IN ("'+ids.join('","')+'")',
           null, function(err, res, tx){
-            Syncer.orm.insert('todos', serverResponse.updates, tx, function(err, res, tx){
-              Syncer.orm.del('todos', self.idCol+' IN ("'+serverResponse.deletes.join('","')+'")', tx, function(err, res, tx){
+            Syncer.orm.insert(self.tableName, serverResponse.updates, tx, function(err, res, tx){
+              Syncer.orm.del(self.tableName, self.idCol+' IN ("'+serverResponse.deletes.join('","')+'")', tx, function(err, res, tx){
                 Syncer.orm.query('UPDATE _lastSync SET ts='
                   + serverResponse.serverTime, tx, function(err, res, tx){
 
