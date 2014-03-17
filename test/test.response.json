@@ -1,10 +1,10 @@
 {
-  "updates": [
+  "upserts": [
     {"value": "foo", "id": 1},
     {"value": "beep", "id": 4}
   ],
   "deletes": [
-    3
+    {"id": 5}
   ],
   "serverTime": 1394892664128
 }

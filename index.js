@@ -9,7 +9,7 @@
         return callback(null, JSON.parse(xmlHttp.responseText));
       }
     };
-    xmlHttp.send(data);
+    xmlHttp.send(typeof data === "string" ? data : JSON.stringify(data));
   };
 
   window.websqlSync = function(opts){
@@ -280,8 +280,10 @@
         // we need new transaction, because this one wouldn't last through xhr
         Syncer.orm.del(self.tableName, 'id IN ("'+ids.join('","')+'")',
           null, function(err, res, tx){
-            Syncer.orm.insert(self.tableName, serverResponse.updates, tx, function(err, res, tx){
-              Syncer.orm.del(self.tableName, self.idCol+' IN ("'+serverResponse.deletes.join('","')+'")', tx, function(err, res, tx){
+            Syncer.orm.insert(self.tableName, serverResponse.upserts, tx, function(err, res, tx){
+              Syncer.orm.del(self.tableName, self.idCol+' IN ("'+
+                serverResponse.deletes.map(function(i){ return i.id; }).join('","')+'")', tx, function(err, res, tx){
+
                 Syncer.orm.query('UPDATE _lastSync SET ts='
                   + serverResponse.serverTime, tx, function(err, res, tx){
 

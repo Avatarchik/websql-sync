@@ -168,11 +168,12 @@ describe('websqlSync', function(){
 //                  console.log(err, res, tx)
                   websqlSync.orm.select('todos', null, tx, function(err, res, tx){
 //                    console.log(err, res, tx)
-                    expect(res.rows.length).to.be(2);
-                    expect(res.rows.item(1).value).to.be('beep');
 //                    for(var i=0; i<res.rows.length; i++){
 //                      console.log(res.rows.item(i))
 //                    }
+                    expect(res.rows.length).to.be(3);
+                    expect(res.rows.item(1).value).to.be('foo');
+
                     websqlSync.orm.select('_lastSync', null, tx, function(err, res){
                       expect(res.rows.item(0).ts).to.be(1394892664128);
                       websqlSync.orm.select('_events', null, tx, function(err, res){
