@@ -193,14 +193,11 @@
 
   Syncer.prototype.init = function(cb){
     Syncer.db.transaction(function(tx){
-      // @todo add TS
       tx.executeSql('CREATE TABLE IF NOT EXISTS _events' +
           ' (id TEXT, cmd TEXT)', null);
       tx.executeSql('CREATE TABLE IF NOT EXISTS _lastSync' +
         ' (ts TIMESTAMP)', null);
-      tx.executeSql('INSERT INTO _lastSync (ts) VALUES (1)', null);
       tx.executeSql('SELECT * FROM _lastSync', null);
-//      setTimeout(cb, 1);
       return cb();
     });
   };
@@ -219,7 +216,6 @@
         ' AFTER DELETE ON '+self.tableName+' BEGIN ' +
         ' INSERT INTO _events (id, cmd) VALUES (old.'+self.idCol+', "delete"); END;', null);
       return cb();
-//      setTimeout(cb, 100);
     });
   };
 
