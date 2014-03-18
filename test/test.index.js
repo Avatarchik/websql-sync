@@ -61,6 +61,13 @@ describe('websqlSync', function(){
       });
     });
 
+    it('insert should handle error', function(done){
+      websqlSync.orm.insert('todos', {id: 'foo', value: 'bar', foo: 2}, null, function(err, res){
+        expect(err).to.have.property('code', 5); // couldnt prepare statement
+        done();
+      });
+    });
+
     it('query should make given sql query', function(done){
       websqlSync.orm.insert('todos', {id: 'foo', value: 'baz'}, null, function(err, res, tx){
         websqlSync.orm.query('SELECT * FROM todos WHERE id = "foo"', tx, function(err, res){

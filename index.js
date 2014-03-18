@@ -57,17 +57,17 @@
 
         values.forEach(function(v){
 
-          var sql = 'INSERT INTO '+table+' ('+cols.join(',')+') ' +
+          var sql = 'INSERT OR REPLACE INTO '+table+' ('+cols.join(',')+') ' +
             'VALUES '+'("'+v.join('","')+'")';
 
           tx.executeSql(sql, null,
-            function success(tx, res){
+            function(tx, res){
               i--;
               error = null;
               result = res;
               if(i === 0) cb(error, result, tx);
             },
-            function error(tx, err){
+            function(tx, err){
               i--;
               error = err;
               if(i === 0) cb(error, result, tx);
@@ -281,17 +281,23 @@
     // we need new transaction, because this one wouldn't last through xhr
     Syncer.orm.del(self.tableName, 'id IN ("'+ids.join('","')+'")',
       null, function(err, res, tx){
+        if(err) return cb(err, null);
+
         Syncer.orm.insert(self.tableName, serverResponse.upserts, tx, function(err, res, tx){
+          if(err) return cb(err, null);
+
           Syncer.orm.del(self.tableName, self.idCol+' IN ("'+
             serverResponse.deletes.map(function(i){ return i.id; }).join('","')+'")', tx, function(err, res, tx){
+            if(err) return cb(err, null);
 
-            Syncer.orm.query('UPDATE _lastSync SET ts='
-              + serverResponse.serverTime, tx, function(err, res, tx){
+            Syncer.orm.query('UPDATE _lastSync SET ts="'
+              + serverResponse.serverTime+'"', tx, function(err, res, tx){
+              if(err) return cb(err, null);
 
               // @fix we shouldn't delete events added during sinc, thus we need
               // track them by id, or timestamp
               Syncer.orm.del('_events', '', tx, function(err, res, tx){
-                return cb(null, res, tx);
+                return cb(err, res, tx);
               });
             });
           });
