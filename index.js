@@ -198,8 +198,7 @@
       tx.executeSql('CREATE TABLE IF NOT EXISTS _events' +
           ' (id TEXT, cmd TEXT)', null);
       tx.executeSql('CREATE TABLE IF NOT EXISTS _lastSync' +
-        ' (ts TIMESTAMP)', null);
-      tx.executeSql('SELECT * FROM _lastSync', null);
+        ' (id VARCHAR(2) PRIMARY KEY UNIQUE, ts TIMESTAMP)', null);
       return cb();
     });
   };
@@ -247,7 +246,7 @@
               payload.deletes.push(res.rows.item(i));
             }
 
-            Syncer.orm.query('SELECT * FROM _lastSync LIMIT 1', tx,
+            Syncer.orm.query('SELECT * FROM _lastSync WHERE id LIKE "id" LIMIT 1', tx,
               function(err, res, tx){
 
               if(err) return cb(err, null, tx);
@@ -290,8 +289,8 @@
             serverResponse.deletes.map(function(i){ return i.id; }).join('","')+'")', tx, function(err, res, tx){
             if(err) return cb(err, null);
 
-            Syncer.orm.query('UPDATE _lastSync SET ts="'
-              + serverResponse.serverTime+'"', tx, function(err, res, tx){
+            Syncer.orm.query('INSERT OR REPLACE INTO _lastSync (id, ts) VALUES ("id","'
+              + serverResponse.serverTime+'")', tx, function(err, res, tx){
               if(err) return cb(err, null);
 
               // @fix we shouldn't delete events added during sinc, thus we need
