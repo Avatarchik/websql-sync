@@ -47,6 +47,8 @@
         }
       }
 
+      if(values.length === 0) return cb(null, null, transaction);
+
       function insert(tx){
         var error = null
           , result = null
@@ -260,37 +262,50 @@
       });
   };
 
+  Syncer.prototype.doRequest = function(payload, cb){
+    var self = this;
+
+    window.websqlSync.postJSON(self.url, payload, function(err, serverResponse){
+      return cb(err, payload, serverResponse);
+    });
+  };
+
+  Syncer.prototype.processResponse = function(err, payload, serverResponse, cb){
+    var self = this;
+
+    // ids of affected items since last sync
+    var ids = payload.upserts.map(function(i){
+      return i.id;
+    });
+
+    // we need new transaction, because this one wouldn't last through xhr
+    Syncer.orm.del(self.tableName, 'id IN ("'+ids.join('","')+'")',
+      null, function(err, res, tx){
+        Syncer.orm.insert(self.tableName, serverResponse.upserts, tx, function(err, res, tx){
+          Syncer.orm.del(self.tableName, self.idCol+' IN ("'+
+            serverResponse.deletes.map(function(i){ return i.id; }).join('","')+'")', tx, function(err, res, tx){
+
+            Syncer.orm.query('UPDATE _lastSync SET ts='
+              + serverResponse.serverTime, tx, function(err, res, tx){
+
+              // @fix we shouldn't delete events added during sinc, thus we need
+              // track them by id, or timestamp
+              Syncer.orm.del('_events', '', tx, function(err, res, tx){
+                return cb(null, res, tx);
+              });
+            });
+          });
+        });
+      });
+  };
+
   Syncer.prototype.sync = function(cb){
     var self = this;
 
     self.makePayload(function(err, payload, tx){
-
-      // ids of affected items since last sync
-      var ids = payload.upserts.map(function(i){
-        return i.id;
-      });
-
-      window.websqlSync.postJSON(self.url, payload, function(err, serverResponse){
-        if(err) return cb(err, null, tx);
-
-        // we need new transaction, because this one wouldn't last through xhr
-        Syncer.orm.del(self.tableName, 'id IN ("'+ids.join('","')+'")',
-          null, function(err, res, tx){
-            Syncer.orm.insert(self.tableName, serverResponse.upserts, tx, function(err, res, tx){
-              Syncer.orm.del(self.tableName, self.idCol+' IN ("'+
-                serverResponse.deletes.map(function(i){ return i.id; }).join('","')+'")', tx, function(err, res, tx){
-
-                Syncer.orm.query('UPDATE _lastSync SET ts='
-                  + serverResponse.serverTime, tx, function(err, res, tx){
-
-                  // @fix we shouldn't delete events added during sinc, thus we need
-                  // track them by id, or timestamp
-                  Syncer.orm.del('_events', '', tx, function(err, res, tx){
-                    return cb(null, res, tx);
-                  });
-                });
-              });
-            });
+      self.doRequest(payload, function(err, payload, response){
+        self.processResponse(err, payload, response, function(err, res, tx){
+          return cb(err, res, tx);
         });
       });
     });

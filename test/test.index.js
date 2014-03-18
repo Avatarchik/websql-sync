@@ -152,6 +152,15 @@ describe('websqlSync', function(){
       });
     });
 
+    it('should process empty response', function(done){
+      var response = {"upserts":[],"deletes":[],"serverTime":1395153563693}
+      var payload = {"upserts":[],"deletes":[{"id": "1s1da1"}],"since":1395153563692}
+      sync.processResponse(null, payload, response, function(err, res){
+        expect(err).to.be(null);
+        done();
+      });
+    });
+
     it('should synchronize', function(done){
       // inserting 1,2,3 items, thus there should be 3 _events
       websqlSync.orm.insert('todos', todos, null, function(err, res, tx){

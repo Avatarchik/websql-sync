@@ -12,5 +12,5 @@ $out = array(
     ),
     'serverTime' => time() * 1000
 );
-fwrite(STDOUT, "stdout\n");
+
 echo json_encode($out);
