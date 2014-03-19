@@ -143,12 +143,6 @@ describe('websqlSync', function(){
   describe('websqlSync', function(){
     sync.url = 'test.response.json';
 
-    beforeEach(function(done){
-      websqlSync.orm.insert('_lastSync', {ts: 10}, null, function(err, res, tx){
-        done();
-      });
-    });
-
     it('should compose payload for server correctly', function(done){
       websqlSync.orm.insert('todos', todos, null, function(err, res, tx){
         sync.makePayload(function(err, pay){
